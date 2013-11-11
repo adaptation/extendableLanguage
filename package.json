@@ -1,0 +1,11 @@
+{
+  "name":"sol",
+  "version":"0.0.0",
+  "license": "MIT",
+  "devDependencies":{
+    "pegjs":"*",
+    "pegjs-coffee-plugin":"*",
+    "escodegen":"*",
+    "lodash":"*"
+  }
+}
