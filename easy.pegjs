@@ -61,7 +61,16 @@ program = TERMINATOR? _ b:block
 block = s:statement ss:(_ TERMINATOR _ statement)* TERMINATOR?
 {new node.Block([s].concat(ss.map((s)->s[3])))}
 
-statement = ex:expressionworthy {return new node.Expr(ex);} / conditional / return
+statement = let / ex:expressionworthy {return new node.Expr(ex);} / conditional / return
+
+let = "let" _ "(" _ a:vars _ ")" _ "in" _ TERMINDENT b:block DEDENT TERM
+{
+  vs = a.map((x)-> new node.Expr(x))
+  b.block = vs.concat b.block
+  return b
+}
+vars = a:assignExpr as:(_ "," _ assignExpr )*
+{return [a].concat(as.map((x)->x[3]));}
 
 expressionworthy = ABExpr / call / func
 ABExpr = assignExpr / binaryExpr
@@ -77,7 +86,7 @@ assignExpr = left:left _ "=" !"=" _ right:expressionworthy
 { return new node.Assign(left,right) }
 
 
-call = fn:caller _ accesses:callAccesses
+call = fn:callee _ accesses:callAccesses
 {
   c = fn
   if accesses
@@ -89,7 +98,7 @@ callAccesses
   {
     return [{acc:"call",as:al}];
    }
-caller = left
+callee = left
 argumentList = "(" _ a:argumentListContents? _ ")"{return a || []}
 argumentListContents = e:argument es:(_ "," _ argument)*
  {return [e].concat(es.map((e)->e[3]));}
@@ -147,7 +156,7 @@ RETURN = a:"return" !identifierPart {return a}
 TRUE = a:"true" !identifierPart {return a}
 FALSE = a:"false" !identifierPart {return a}
 
-whiteSpace = [ ] / "\r" / s:("\\" "\r"? "\n") { return s.join("");}
+whiteSpace = " " / "\r" / s:("\\" "\r"? "\n") { return s.join("");}
 _  = __?
 __ = ws:whiteSpace+ {return ws.join("");}
 

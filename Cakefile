@@ -3,5 +3,7 @@
 files='test.coffee'
 
 exec "coffee #{files}",(err,stdout,stderr)->
-		throw err if err
+		if err
+			console.log stdout
+			throw err
 		console.log stdout+stderr

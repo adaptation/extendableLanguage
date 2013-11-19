@@ -16,7 +16,7 @@ pre = preprocessor.parse input
 # console.dir pre
 
 ast = parser.parse pre
-# console.log "ast : ",ast#.body[0].block
+# console.log "ast : ",ast#.body[0].block[0].block
 
 
 trAst = TR.trace ast

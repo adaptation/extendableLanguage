@@ -16,8 +16,8 @@ funcBody = TERMINDENT b:block DEDENT TERM / s:statement
 
 assignExpr = left:left _ "=" !"=" _ right:expressionworthy
 
-call = fn:caller _ accesses:callAccesses
-caller = left
+call = fn:callee _ accesses:callAccesses
+callee = left
 callAccesses = al:argumentList
 argumentList = "(" _ a:argumentListContents? _ ")"
 argumentListContents = e:argument es:(_ "," _ argument)*
