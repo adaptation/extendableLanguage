@@ -1,0 +1,12 @@
+test.pegjs
+test2.coffee
+extend.pegjs
+redux.pegjs
+
+
+
+/node_module/
+/node_module/pegjs-coffee-plugin/
+/node_module/pegjs/
+/node_module/lodash/
+/node_module/escodegen/
