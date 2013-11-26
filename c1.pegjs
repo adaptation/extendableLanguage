@@ -2,120 +2,87 @@
 node= require('../../../treeNode.coffee')
 us = require('lodash')
 
-precedence =
-  [ ['||'],
-  ['&&'],
-  ['===','!=='],
-  ['<=','>=','<','>'],
-  ['+','-'],
-  ['*','/','%']
-  ]
-
-precedenceTable = (()->
-  table = {}
-  level = 0
-  for ops in precedence
-    ops = precedence[level]
-    for op in ops
-      table[op] = level;
-    ++level
-  return table;
-)();
-
-
-foldBinaryOp = (parts)->
-  if parts.length < 3
-    return parts[0];
-  else if parts.length is 3
-    return makeTerm(parts[0], parts[1], parts[2]);
-  else
-    precedence = precedenceTable;
-    left = parts.shift()
-    op = parts.shift()
-    right = parts.shift()
-    nextOp = parts.shift()
-    if precedence[op] <= precedence[nextOp]
-      return makeTerm(left, op, makeTerm(right, nextOp, foldBinaryOp(parts)));
-    else
-      return makeTerm(makeTerm(left, op, right), nextOp, foldBinaryOp(parts));
-
-
 makeTerm = (l, op, r)->
   return new node.BinaryOperation(l,op,r);
-
-createMemberCall = (head,access)->
-  if !access?
-    return head
-  switch access.acc
-    when "call"
-      return new node.Call(head,access.as)
-    else
-      return head
 }
-
 start = program
 
 program = TERMINATOR? _ b:block
-{  return new node.Program([b]) }
+{  return b }
 
 block = s:statement ss:(_ TERMINATOR _ statement)* TERMINATOR?
-{new node.Block([s].concat(ss.map((s)->s[3])))}
-
-statement = let / ex:expressionworthy {return new node.Expr(ex);} / conditional / return
-
-let = "let" _ "(" _ a:vars _ ")" _ "in" _ TERMINDENT b:block DEDENT TERM
 {
-  vs = a.map((x)-> new node.Expr(x))
-  b.block = vs.concat b.block
-  return b
+  a = ""
+  if ss.length > 0
+    a += ss.map((x)-> "\n" + x[3]).join("")
+  return s + a
+}
+
+statement = let / expressionworthy / conditional / return
+
+let = "let" _ "(" _ vars:vars _ ")" _ "in" _ TERMINDENT b:block DEDENT TERM
+{
+  return "\n\uEFEF"+vars+"\n"+b+"\n\uEFFE\uEFFF\n"
 }
 vars = a:assignExpr as:(_ "," _ assignExpr )*
-{return [a].concat(as.map((x)->x[3]));}
+{return a + as.map((x)->"\n" + x[3]).join("")}
 
 expressionworthy = ABExpr / call / func
 ABExpr = assignExpr / binaryExpr
 
 func = params:("(" _ args? _ ")" _ )? "->" _ body:funcBody?
-{ new node.Function(params[2],body || null) }
-args = a:identifier as:(_ "," _ identifier )* {return [a].concat(as.map((x)->x[3]));}
+{
+  return "(" + (params[2] || "") + ")->" + (body || "")
+}
+args = a:identifier as:(_ "," _ identifier )*
+{
+  return a + as.map((x)->x[1] + x[3]).join("")
+}
 //preprocessor DEDENT -> DEDENT TERM
-funcBody = TERMINDENT b:block DEDENT TERM{return b }
-    / s:statement {return new node.Block([s]); }
+funcBody = TERMINDENT b:block DEDENT TERM
+{
+  return "\n\uEFEF"+b+"\n\uEFFE\uEFFF\n"
+ }
+    / s:statement {return s }
 
 assignExpr = left:left _ "=" !"=" _ right:expressionworthy
-{ return new node.Assign(left,right) }
+{ return left + "=" + right }
 
 
 call = fn:callee _ accesses:callAccesses
 {
   c = fn
   if accesses
-    c = us.foldl(accesses,createMemberCall,c)
+    c += accesses
   return c
 }
-callAccesses
-  = al:argumentList
-  {
-    return [{acc:"call",as:al}];
-   }
+callAccesses = al:argumentList{return al }
 callee = left
-argumentList = "(" _ a:argumentListContents? _ ")"{return a || []}
+argumentList = "(" _ a:argumentListContents? _ ")"
+{
+  b = "("
+  if a
+    b += a
+  b += ")"
+  return b
+}
 argumentListContents = e:argument es:(_ "," _ argument)*
- {return [e].concat(es.map((e)->e[3]));}
+ {return e + es.map((e)->e[1] + e[3]).join("");}
 argument = binaryExpr / call
 
-conditional = IF _ cond:ABExpr _ body:conditionalBody _ e:elseClause?
-{ return new node.Conditional(cond, body.block, e);}
-conditionalBody = b:funcBody{ return {block: b}; }
-elseClause = TERMINATOR? _ ELSE b:elseBody { return b; }
+conditional = IF __ cond:ABExpr _ body:conditionalBody _ e:elseClause?
+{ return "if "+cond+body+(e || "")}
+conditionalBody = funcBody
+elseClause = TERMINATOR? _ ELSE b:elseBody
+{ return "else "+b }
 elseBody = funcBody
 
 leftExpr = call / primary
 
-return = RETURN _ e:expressionworthy? {return new node.Return(e || null);}
+return = RETURN __ e:expressionworthy? {return "return "+(e || "")}
 
 binaryExpr = l:leftExpr r:( _ o:binaryOperator _ e:(expressionworthy / primary){return [o,e]})* {
-  return foldBinaryOp([l].concat(us.flatten(r)));
+  return l + us.flatten(r).join("")
 }
 binaryOperator = a:CompoundAssignmentOperators !"=" {return a;} / "<=" / ">=" / "<" / ">" / "==" {return "===";} / "!=" {return "!==";}
 CompoundAssignmentOperators = a:("&&" / "||" / [*/%] / e:"+" !"+" {return e;} / e:"-" !"-" {return e;}){
@@ -126,20 +93,20 @@ primary = literal / left
 literal = Number / bool
 left = identifier
 
-bool = TRUE {return new node.Bool(true)} / FALSE {return new node.Bool(false)}
+bool = TRUE / FALSE
 
 Number = integer
 
 integer "integer"
-  = "0" {return new node.Int(0)}
-  / head:[1-9] digits:decimalDigit* {return new node.Int(parseInt(head + digits.join(""), 10)); }
+  = "0" {return "0"}
+  / head:[1-9] digits:decimalDigit* {return head + digits.join("") }
 
 decimalDigit = [0-9]
 
 identifier = !reserved i:identifierName { return i; }
 identifierName = head:identifierStart tail:identifierPart* {
   tail.unshift(head);
-  return new node.Identifier(tail.join(""));
+  return tail.join("")
 }
 identifierStart
   = UniLetter

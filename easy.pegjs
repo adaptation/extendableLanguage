@@ -61,22 +61,13 @@ program = TERMINATOR? _ b:block
 block = s:statement ss:(_ TERMINATOR _ statement)* TERMINATOR?
 {new node.Block([s].concat(ss.map((s)->s[3])))}
 
-statement = let / ex:expressionworthy {return new node.Expr(ex);} / conditional / return
-
-let = "let" _ "(" _ a:vars _ ")" _ "in" _ TERMINDENT b:block DEDENT TERM
-{
-  vs = a.map((x)-> new node.Expr(x))
-  b.block = vs.concat b.block
-  return b
-}
-vars = a:assignExpr as:(_ "," _ assignExpr )*
-{return [a].concat(as.map((x)->x[3]));}
+statement = INDENT b:block DEDENT TERM{return b } / ex:expressionworthy {return new node.Expr(ex);} / conditional / return
 
 expressionworthy = ABExpr / call / func
 ABExpr = assignExpr / binaryExpr
 
 func = params:("(" _ args? _ ")" _ )? "->" _ body:funcBody?
-{ new node.Function(params[2],body || null) }
+{new node.Function(params[2],body || null) }
 args = a:identifier as:(_ "," _ identifier )* {return [a].concat(as.map((x)->x[3]));}
 //preprocessor DEDENT -> DEDENT TERM
 funcBody = TERMINDENT b:block DEDENT TERM{return b }
@@ -104,7 +95,7 @@ argumentListContents = e:argument es:(_ "," _ argument)*
  {return [e].concat(es.map((e)->e[3]));}
 argument = binaryExpr / call
 
-conditional = IF _ cond:ABExpr _ body:conditionalBody _ e:elseClause?
+conditional = IF __ cond:ABExpr _ body:conditionalBody _ e:elseClause?
 { return new node.Conditional(cond, body.block, e);}
 conditionalBody = b:funcBody{ return {block: b}; }
 elseClause = TERMINATOR? _ ELSE b:elseBody { return b; }
@@ -112,7 +103,7 @@ elseBody = funcBody
 
 leftExpr = call / primary
 
-return = RETURN _ e:expressionworthy? {return new node.Return(e || null);}
+return = RETURN __ e:expressionworthy? {return new node.Return(e || null);}
 
 binaryExpr = l:leftExpr r:( _ o:binaryOperator _ e:(expressionworthy / primary){return [o,e]})* {
   return foldBinaryOp([l].concat(us.flatten(r)));
@@ -156,7 +147,7 @@ RETURN = a:"return" !identifierPart {return a}
 TRUE = a:"true" !identifierPart {return a}
 FALSE = a:"false" !identifierPart {return a}
 
-whiteSpace = " " / "\r" / s:("\\" "\r"? "\n") { return s.join("");}
+whiteSpace = " " / "\r"
 _  = __?
 __ = ws:whiteSpace+ {return ws.join("");}
 
