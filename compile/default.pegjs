@@ -61,7 +61,7 @@ program = TERMINATOR? _ b:block
 block = s:statement ss:(_ TERMINATOR _ statement)* TERMINATOR?
 {new node.Block([s].concat(ss.map((s)->s[3])))}
 
-statement = INDENT b:block DEDENT TERM{return b } / ex:expressionworthy {return new node.Expr(ex);} / conditional / return
+statement = ex:expressionworthy {return new node.Expr(ex);} / conditional / return / INDENT b:block DEDENT TERM{return b }
 
 expressionworthy = ABExpr / call / func
 ABExpr = assignExpr / binaryExpr
