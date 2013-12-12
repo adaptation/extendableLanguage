@@ -22,38 +22,19 @@ pre = preprocessor.parse input
 # console.dir pre
 
 extendedInput = extendParser.parse pre
-# console.log "extend : \n" +extendedInput+"\n"
-
-compile = (source)->
-	dir = "./compile/"
-	c = "compile.csv"
-	compilers = fs.readFileSync(dir + c).toString().split("\n").map((x)-> x.split(","))
-	_compile = (oldC,newC)->
-		newP = peg.buildParser fs.readFileSync(dir+newC).toString()
-		newsource = newP.parse source
-		oldP = peg.buildParser fs.readFileSync(dir+oldC).toString()
-		return (oldP.parse newsource)
-	_compile compilers[0][0],compilers[0][1]
+# console.log "extendedInput : \n" +extendedInput+"\n"
 
 
-# console.log (compile extendedInput)
-# compile extendedInput
-
-# extendedParser = peg.buildParser fs.readFileSync('./compile/b.pegjs').toString()
-# newInput = extendedParser.parse extendedInput
-# console.log "newInput : \n" +newInput+"\n"
-
-ast = compile extendedInput
-# ast =  parser.parse newInput
-# ast = parser.parse extendedInput
+# ast =  parser.parse afterConversion
+ast = parser.parse extendedInput
 # console.log "ast : ",ast#.body[0].block[0].block
 
 trAst = TR.trace ast
 # console.log "trAst : ",trAst+"\n"
 
-
 esc = trAst.toESC()#ast.toESC()
 # console.log "esc : \n" esc+"\n"
 
 code = ecg.generate esc
-console.log "code : " +code+"\n"
+console.log "code :\n"
+console.log code+"\n"

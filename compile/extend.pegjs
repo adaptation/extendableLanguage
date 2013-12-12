@@ -1,6 +1,8 @@
 {
 		@fs =  require('fs')
 		@_ = require('lodash')
+		@peg = require 'pegjs'
+		(require 'pegjs-coffee-plugin').addTo @peg
 
 		@extendParser = (dir,oldN,newN,exs)->
 			insertNode = "statement = "
@@ -26,6 +28,12 @@
 			if !(@_.find set,(x)-> x[1] == newN)
 				compilerLog += oldN+","+newN+"\n"
 				@fs.writeFileSync dir+logName,oldN+","+newN+"\n","utf8"
+
+		@compile = (source,compiler)->
+			dir = "./compile/"
+			newP = @peg.buildParser (@fs.readFileSync(dir+compiler).toString())
+			newsource = newP.parse source
+			return newsource
 }
 
 start = program
@@ -33,13 +41,12 @@ start = program
 program = TERMINATOR? _ b:block
 { return b}
 
-statement = extends / text
+statement = extends / use / text
 
 block = s:(statement TERMINATOR?)+
 {
 	return s.map((x)->x.join("")).join("")
 }
-
 
 
 extends = EXTEND __ oldC:string _ "," _ newC:string TERMINDENT extensions:extend+ DEDENT TERM
@@ -62,6 +69,14 @@ extend = node:string _ "=" _ syntax:ExcludeIndentDedent TERMINDENT b:semantics D
 {
 	return {node:node,extend:" = " + syntax + "{\n\t" + b + "\n}\n"}
 }
+
+use = USE __ C:string TERMINATOR t:(text TERMINATOR)+
+{
+	tex = t.map((x)->x.join("")).join("")
+	compiledTex = @compile tex,C+".pegjs"
+	return compiledTex
+}
+
 
 text = !reserved i:(charactar / whiteSpace / symbol / INDENT /  "\uEFFE")+ { return i.join("") }
 ExcludeIndentDedent = !reserved i:(charactar / whiteSpace / symbol)+ { return i.join("") }

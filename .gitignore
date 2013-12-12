@@ -1,10 +1,13 @@
 test.pegjs
 test2.coffee
-extend.pegjs
-
+test.text
+test.pegjs
 
 /node_module/
 /node_module/pegjs-coffee-plugin/
 /node_module/pegjs/
 /node_module/lodash/
 /node_module/escodegen/
+
+/compile/b.pegjs
+/compile/compile.csv
