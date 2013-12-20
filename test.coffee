@@ -3,6 +3,8 @@ peg = require 'pegjs'
 fs = require 'fs'
 TR = require './trace.coffee'
 ecg = require 'escodegen'
+_ = require 'lodash'
+nodeInfo = require './nodeInfo.coffee'
 
 
 # input = fs.readFileSync "examples/let.coffee" , "utf8"
@@ -12,6 +14,8 @@ input = fs.readFileSync "examples/input2.coffee" , "utf8"
 
 preprocessor = peg.buildParser fs.readFileSync('preprocessor.pegjs').toString()
 
+makeGrammer = peg.buildParser fs.readFileSync('./compile/getGrammer.pegjs').toString()
+
 extendParser = peg.buildParser fs.readFileSync('./compile/extend.pegjs').toString()
 
 parser = peg.buildParser fs.readFileSync('./compile/default.pegjs').toString()
@@ -20,6 +24,18 @@ parser = peg.buildParser fs.readFileSync('./compile/default.pegjs').toString()
 pre = preprocessor.parse input
 # console.log "preprocessor : \n"+pre+"\n"
 # console.dir pre
+
+readPEG = fs.readFileSync('./compile/c0.pegjs').toString()
+g = makeGrammer.parse readPEG
+console.log g
+console.log "\ndisplayed c0's grammer."
+# fs.writeFileSync "./test.txt",g
+
+# n = nodeInfo.parseNodeInfo './compile/c0.pegjs'
+# console.log (n.info "statement")
+# console.dir (n.slice(0,5))
+nodeInfo.nodeInfoToFile('./compile/c0.pegjs')
+console.log "And create a file \"./nodeInfo.txt\" recorded c0.pegjs's infomation."
 
 extendedInput = extendParser.parse pre
 # console.log "extendedInput : \n" +extendedInput+"\n"
@@ -36,5 +52,5 @@ esc = trAst.toESC()#ast.toESC()
 # console.log "esc : \n" esc+"\n"
 
 code = ecg.generate esc
-console.log "code :\n"
-console.log code+"\n"
+# console.log "code :\n"
+# console.log code+"\n"

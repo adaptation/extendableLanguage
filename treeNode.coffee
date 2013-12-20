@@ -1,6 +1,6 @@
 _ = require "lodash"
 
-exports.Program = class Program
+@Program = class Program
   constructor:(@body)->
     @type = "Program"
   toString:()->
@@ -8,7 +8,7 @@ exports.Program = class Program
   toESC:()->
     return {type:@type, body: @body.map((x)-> return x.toESC())}
 
-exports.Expr = class Expr
+@Expr = class Expr
   constructor:(@expr)->
     @type = "ExpressionStatement"
   toString:()-> return @expr.toString()
@@ -20,7 +20,7 @@ makeExpr = (expr)->
     expression:expr
   }
 
-exports.Function = class Function
+@Function = class Function
   constructor:(@args,@body)->
     @type = "FunctionExpression"
   toString:()->
@@ -97,17 +97,17 @@ makeLogicalOp = (left,op,right)->
   right:right
   }
 
-exports.Literal = class Literal
+@Literal = class Literal
   constructor:(@literal)->
     @type = "Literal"
   toString:()-> return @literal.toString()
   toESC:()-> return {type: @type, value: @literal}
 
-exports.Int = class Int extends Literal
+@Int = class Int extends Literal
 
-exports.Bool = class Bool extends Literal
+@Bool = class Bool extends Literal
 
-exports.Identifier = class Identifier
+@Identifier = class Identifier
   constructor:(@identifier)->
     @type = "Identifier"
   toString:()->
@@ -115,7 +115,7 @@ exports.Identifier = class Identifier
   toESC:()->
     return {type: @type,name: @identifier.toString()}
 
-exports.Operator = class Operator
+@Operator = class Operator
   constructor:(@op)->
     @type = "Operator"
   toString:()->
@@ -123,7 +123,7 @@ exports.Operator = class Operator
   toESC:()->
     return @op
 
-exports.Block = class Block
+@Block = class Block
   constructor:(@block)->
     @type = "BlockStatement"
   toString:()->
@@ -166,7 +166,7 @@ setVar = (env)->
   else
     return []
 
-exports.Assign = class Assign
+@Assign = class Assign
   constructor:(@left,@right)->
     @type = "AssignmentExpression"
   toString:()->

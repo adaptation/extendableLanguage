@@ -2,6 +2,7 @@ test.pegjs
 test2.coffee
 test.text
 test.pegjs
+nodeInfo.txt
 
 /node_module/
 /node_module/pegjs-coffee-plugin/
@@ -10,4 +11,5 @@ test.pegjs
 /node_module/escodegen/
 
 /compile/b.pegjs
+/compile/c.pegjs
 /compile/compile.csv

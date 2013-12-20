@@ -14,9 +14,11 @@ block = s:statement ss:(_ TERMINATOR _ statement)* TERMINATOR?
   return s + a
 }
 
-statement = expressionworthy / conditional / return / INDENT b:block DEDENT TERM{return b }
+statement = expressionworthy / conditional / return / INDENT b:block DEDENT TERM
+{return b }
 
 expressionworthy = ABExpr / call / func
+
 ABExpr = assignExpr / binaryExpr
 
 func = params:("(" _ args? _ ")" _ )? "->" _ body:funcBody?
@@ -32,11 +34,10 @@ funcBody = TERMINDENT b:block DEDENT TERM
 {
   return "\n\uEFEF"+b+"\n\uEFFE\uEFFF\n"
  }
-    / s:statement {return s }
+/ s:statement {return s }
 
 assignExpr = left:left _ "=" !"=" _ right:expressionworthy
 { return left + "=" + right }
-
 
 call = fn:callee _ accesses:callAccesses
 {
@@ -86,23 +87,18 @@ bool = TRUE / FALSE
 
 Number = integer
 
-integer "integer"
-  = "0" {return "0"}
-  / head:[1-9] digits:decimalDigit* {return head + digits.join("") }
-
+integer = "0" {return "0"} / head:[1-9] digits:decimalDigit* {return head + digits.join("") }
 decimalDigit = [0-9]
 
 identifier = !reserved i:identifierName { return i; }
-identifierName = head:identifierStart tail:identifierPart* {
+identifierName = head:identifierStart tail:identifierPart*
+{
   tail.unshift(head);
   return tail.join("")
 }
-identifierStart
-  = UniLetter
-  / [$_]
-identifierPart
-  = identifierStart
-  / decimalDigit
+identifierStart = UniLetter / [$_]
+identifierPart = identifierStart / decimalDigit
+UniLetter = [A-Za-z]
 
 //keyword
 IF = a:"if" !identifierPart {return a}
@@ -122,9 +118,6 @@ TERM = n:("\r"? "\n"){return n.join("");} / "\uEFFF" { return ''; }
 TERMINATOR = t:(_ TERM)+ {return t.join("");}
 TERMINDENT = t:(TERMINATOR INDENT) {return t.join("");}
 
-Keywords
-  = ("true" / "false" / "return" / "if" / "else") !identifierPart
+Keywords = ("true" / "false" / "return" / "if" / "else") !identifierPart
 
 reserved = Keywords
-
-UniLetter = [A-Za-z]

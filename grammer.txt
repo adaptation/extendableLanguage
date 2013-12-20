@@ -7,6 +7,7 @@ block = s:statement ss:(_ TERMINATOR _ statement)* TERMINATOR?
 statement = expressionworthy / conditional / return / INDENT b:block DEDENT TERM
 
 expressionworthy = ABExpr / call / func
+
 ABExpr = assignExpr / binaryExpr
 
 func = params:("(" _ args? _ ")" _ )? "->" _ body:funcBody?
@@ -23,16 +24,16 @@ argumentList = "(" _ a:argumentListContents? _ ")"
 argumentListContents = e:argument es:(_ "," _ argument)*
 argument = binaryExpr / call
 
-conditional = IF _ cond:ABExpr _ body:conditionalBody _ e:elseClause?
-conditionalBody = b:funcBody
+conditional = IF __ cond:ABExpr _ body:conditionalBody _ e:elseClause?
+conditionalBody = funcBody
 elseClause = TERMINATOR? _ ELSE b:elseBody
 elseBody = funcBody
 
 leftExpr = call / primary
 
-return = RETURN _ e:expressionworthy?
+return = RETURN __ e:expressionworthy?
 
-binaryExpr = l:leftExpr r:( _ o:binaryOperator _ e:(expressionworthy / primary))*
+binaryExpr = l:leftExpr r:(_ o:binaryOperator _ e:(expressionworthy / primary))*
 binaryOperator = a:CompoundAssignmentOperators !"=" / "<=" / ">=" / "<" / ">" / "==" / "!="
 CompoundAssignmentOperators = a:("&&" / "||" / [*/%] / e:"+" !"+" / e:"-" !"-")
 
@@ -40,7 +41,7 @@ primary = literal / left
 literal = Number / bool
 left = identifier
 
-bool = TRUE/ FALSE
+bool = TRUE / FALSE
 
 Number = integer
 
@@ -49,15 +50,9 @@ decimalDigit = [0-9]
 
 identifier = !reserved i:identifierName
 identifierName = head:identifierStart tail:identifierPart*
-identifierStart
-  = UniLetter
-  / [$_]
-identifierPart
-  = identifierStart
-  / decimalDigit
-
+identifierStart = UniLetter / [$_]
+identifierPart = identifierStart / decimalDigit
 UniLetter = [A-Za-z]
-
 
 //keyword
 IF = a:"if" !identifierPart
@@ -67,8 +62,8 @@ RETURN = a:"return" !identifierPart
 TRUE = a:"true" !identifierPart
 FALSE = a:"false" !identifierPart
 
-whiteSpace = [ ] / "\r" / s:("\\" "\r"? "\n")
-_  = __?
+whiteSpace = " " / "\r"
+_ = __?
 __ = ws:whiteSpace+
 
 INDENT = "\uEFEF"
@@ -78,5 +73,4 @@ TERMINATOR = t:(_ TERM)+
 TERMINDENT = t:(TERMINATOR INDENT)
 
 reserved = Keywords
-Keywords
-  = ("true" / "false" / "return" / "if" / "else") !identifierPart
+Keywords = ("true" / "false" / "return" / "if" / "else") !identifierPart
