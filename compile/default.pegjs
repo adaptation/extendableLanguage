@@ -52,7 +52,6 @@ createMemberCall = (head,access)->
     else
       return head
 }
-
 start = program
 
 program = TERMINATOR? _ b:block
@@ -84,11 +83,10 @@ call = fn:callee _ accesses:callAccesses
     c = us.foldl(accesses,createMemberCall,c)
   return c
 }
-callAccesses
-  = al:argumentList
-  {
+callAccesses = al:argumentList
+{
     return [{acc:"call",as:al}];
-   }
+}
 callee = left
 argumentList = "(" _ a:argumentListContents? _ ")"{return a || []}
 argumentListContents = e:argument es:(_ "," _ argument)*
@@ -132,12 +130,8 @@ identifierName = head:identifierStart tail:identifierPart* {
   tail.unshift(head);
   return new node.Identifier(tail.join(""));
 }
-identifierStart
-  = UniLetter
-  / [$_]
-identifierPart
-  = identifierStart
-  / decimalDigit
+identifierStart = UniLetter / [$_]
+identifierPart = identifierStart / decimalDigit
 
 //keyword
 IF = a:"if" !identifierPart {return a}
@@ -157,8 +151,7 @@ TERM = n:("\r"? "\n"){return n.join("");} / "\uEFFF" { return ''; }
 TERMINATOR = t:(_ TERM)+ {return t.join("");}
 TERMINDENT = t:(TERMINATOR INDENT) {return t.join("");}
 
-Keywords
-  = ("true" / "false" / "return" / "if" / "else") !identifierPart
+Keywords =  TRUE / FALSE / RETURN / IF / ELSE
 
 reserved = Keywords
 

@@ -118,6 +118,6 @@ TERM = n:("\r"? "\n"){return n.join("");} / "\uEFFF" { return ''; }
 TERMINATOR = t:(_ TERM)+ {return t.join("");}
 TERMINDENT = t:(TERMINATOR INDENT) {return t.join("");}
 
-Keywords = ("true" / "false" / "return" / "if" / "else") !identifierPart
+Keywords = TRUE / FALSE / RETURN / IF / ELSE
 
 reserved = Keywords

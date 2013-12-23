@@ -27,7 +27,7 @@ getInfo = (x,name)->
 	parseNode = peg.buildParser fs.readFileSync('./compile/parseGrammer.pegjs').toString()
 	return (parseNode.parse readPEG)
 
-@getNodesInfo = (read)->
+@getNodeInfo = (read)->
 	nodeInfo = _.filter (@parseNodeInfo read),(x)-> return x.name?
 	nodeInfo.names = getNames nodeInfo
 	nodeInfo.leavesNum = getLeavesNum nodeInfo
@@ -45,5 +45,5 @@ getInfo = (x,name)->
 			else
 				key+": "+value.toString())
 		.join(", "))+" }"
-	str = (@getNodesInfo read).map(obj).join(",\n")
+	str = (@getNodeInfo read).map(obj).join(",\n")
 	fs.writeFileSync "./nodeInfo.txt",str

@@ -38,7 +38,7 @@ pegExpr = a:firstPegExpr _ "*" _ b:pegExpr? {return a+"* "+b }
  / firstPegExpr
 firstPegExpr = pegLiteral / pegChar
  / "(" _  a:pegExpr _ b:( TERMINATOR? _ "/" _ c:pegExpr _ {return c})* _ ")"
-{ return "("+a+b.join(" / ")+")"}
+{ return if (b.length > 0) then "("+([a].concat b).join(" / ")+")" else "("+a+")" }
  / "&" _ a:pegExpr {return "&"+a}
  / "!" _ a:pegExpr {return "!"+a}
  / label:identifier _ ":" _ a:pegExpr {return label+":"+a} / identifier
