@@ -12,4 +12,5 @@ nodeInfo.txt
 
 /compile/b.pegjs
 /compile/c.pegjs
+/compile/d.pegjs
 /compile/compile.csv

@@ -8,7 +8,7 @@ nodeInfo = require './nodeInfo.coffee'
 
 
 # input = fs.readFileSync "examples/let.coffee" , "utf8"
-input = fs.readFileSync "examples/input2.coffee" , "utf8"
+input = fs.readFileSync "examples/input3.coffee" , "utf8"
 # input = fs.readFileSync "examples/input.coffee" , "utf8"
 # console.log "input : \n" +input + "\n"
 
@@ -20,8 +20,12 @@ extendParser = peg.buildParser fs.readFileSync('./compile/extend.pegjs').toStrin
 
 parser = peg.buildParser fs.readFileSync('./compile/default.pegjs').toString()
 
+extendedInput = extendParser.parse input
+# console.log "extendedInput : \n" +extendedInput+"\n"
+
 #ast = parser.parse input
-pre = preprocessor.parse input
+pre = preprocessor.parse extendedInput
+# pre = preprocessor.parse input
 # console.log "preprocessor : \n"+pre+"\n"
 # console.dir pre
 
@@ -35,12 +39,11 @@ pre = preprocessor.parse input
 # console.dir (n.slice(0,5))
 # nodeInfo.nodeInfoToFile('./compile/c.pegjs')
 
-extendedInput = extendParser.parse pre
+# extendedInput = extendParser.parse pre
 # console.log "extendedInput : \n" +extendedInput+"\n"
 
-
-# ast =  parser.parse afterConversion
-ast = parser.parse extendedInput
+# ast = parser.parse extendedInput
+ast = parser.parse pre
 # console.log "ast : ",ast#.body[0].block[0].block
 
 trAst = TR.trace ast

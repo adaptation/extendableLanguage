@@ -44,13 +44,17 @@
 			compilerLog = @fs.readFileSync(dir+logName).toString()
 			set = compilerLog.split("\n").map((x)-> x.split(","))
 			if !(@_.find set,(x)-> x[1] == newN)
-				compilerLog += oldN+","+newN+"\n"
-				@fs.writeFileSync dir+logName,oldN+","+newN+"\n","utf8"
+				newlog = oldN+","+newN+"\n"
+				file = @fs.openSync dir+logName,"a"
+				@fs.writeSync file,newlog,null,"utf8"
+				@fs.closeSync file
 
 		@compile = (source,compiler)->
 			dir = "./compile/"
+			pre = @peg.buildParser (@fs.readFileSync("preprocessor.pegjs").toString())
+			preprocessed = pre.parse source
 			newP = @peg.buildParser (@fs.readFileSync(dir+compiler).toString())
-			newsource = newP.parse source
+			newsource = newP.parse preprocessed
 			return newsource
 }
 
@@ -68,18 +72,18 @@ block = s:(statement TERMINATOR?)+
 
 extends = EXTEND __ oldC:identifier _ "," _ newC:identifier _ ","
  _ addTo:identifier _ "," _ addNode:identifier "," _ n:num
- TERMINDENT extensions:(a:extend TERM{return a})+ DEDENT TERM
+ TERMINATOR? "{" TERMINATOR? extensions:(a:extend TERM{return a})+ TERMINATOR? "}"
 {
 	dir = "./compile/"
 	oldName = oldC+".pegjs"
 	newName = newC+".pegjs"
 
 	@TextendParser dir,oldName,newName,extensions,addTo,addNode,n
+	@parserLog dir,oldName,newName
 
 	return ""
 }
-/ EXTEND __ oldC:identifier _ "," _ newC:identifier TERMINDENT
- extensions:(a:extend TERM{return a})+ DEDENT TERM
+/ EXTEND __ oldC:identifier _ "," _ newC:identifier TERMINATOR? "{" TERMINATOR? extensions:(a:extend TERM{return a})+ TERMINATOR? "}"
 {
 	dir = "./compile/"
 	oldName = oldC+".pegjs"
@@ -94,6 +98,7 @@ extends = EXTEND __ oldC:identifier _ "," _ newC:identifier _ ","
 
 extend =  node:identifier _ "=" _ semantics:pegTerm
 {
+	#console.log node,semantics
 	extend = " = "+semantics
 	return {node:node,extend:extend}
 }
@@ -103,19 +108,20 @@ pegTerm = a:pegExpr _ b:( TERMINATOR? _ "/" _ c:pegExpr _ {return c})*
 	return if (b.length > 0) then (([a].concat b).join(" / ")) else a
 }
 
-pegAction = TERMINDENT _ TERMINATOR? b:(c:ExcludeBrace TERMINATOR? {return c})* DEDENT TERM
+pegAction = "{" TERMINATOR? b:(c:ExcludeBrace TERMINATOR? {return c})* "}"
 {
-	return "{\n\t"+ b.join("\n\t") + "\n}"
+	#console.log b
+	return "{\n\t"+ (@_.filter b,(x)->x.length > 0 ).join("\n\t") + "\n}"
 }
 
-pegExpr = a:firstPegExpr _ "*" _ b:pegExpr? {return a+"* "+b }
- / a:firstPegExpr _ "+" _ b:pegExpr? {return a+"+ "+b }
- / a:firstPegExpr _ "?" _ b:pegExpr? {return a+"? "+b }
+pegExpr = a:firstPegExpr _ "*" TERMINATOR? _ b:pegAction _ c:pegExpr? {return a+"* "+b+c }
+ / a:firstPegExpr _ "+" TERMINATOR? _ b:pegAction _ c:pegExpr? {return a+"+ "+b+c }
+ / a:firstPegExpr _ "?" TERMINATOR? _ b:pegAction _ c:pegExpr? {return a+"? "+b+c }
  / a:firstPegExpr __ b:pegExpr
  {
  	return a+" "+b
  }
- / a:(firstPegExpr pegAction) { return a.join("")}
+ / a:firstPegExpr TERMINATOR? _  b:pegAction { return a+b}
  / firstPegExpr
 firstPegExpr = pegLiteral / pegChar
  / "(" _  a:pegExpr _ b:( TERMINATOR? _ "/" _ c:pegExpr _ {return c})* _ ")"
@@ -137,7 +143,7 @@ identifierPart = identifierStart / decimalDigit
 
 
 
-use = USE __ C:identifier TERMINATOR t:(text TERMINATOR)+
+use = USE __ C:identifier TERMINATOR t:(text TERMINATOR?)+
 {
 	tex = t.map((x)->x.join("")).join("")
 	compiledTex = @compile tex,C+".pegjs"
@@ -145,9 +151,9 @@ use = USE __ C:identifier TERMINATOR t:(text TERMINATOR)+
 }
 
 
-text = !reserved i:(charactar / whiteSpace / symbol / bracket / brace / diagonal / quot / INDENT /  "\uEFFE")+ { return i.join("") }
+text = !reserved i:(charactar / whiteSpace / symbol / bracket / brace / diagonal / quot / INDENT /  "\uEFFE" / "\uEFFF")+ { return i.join("") }
 ExcludeQuot = i:(charactar / whiteSpace / symbol / "\\\"" / "\\\'" / bracket / diagonal)+ { return i.join("") }
-ExcludeBrace = i:(charactar / whiteSpace / symbol / bracket / "\\{" / "\\}" / diagonal / quot)+ { return i.join("") }
+ExcludeBrace = i:(charactar / whiteSpace / symbol / bracket / "\\{" / "\\}" / diagonal / quot / INDENT {return ""} /  "\uEFFE" {return ""} / "\uEFFF" {return ""})+ { return i.join("") }
 ExcludeBracket = i:(charactar / whiteSpace / symbol / "\\[" / "\\]" / brace / diagonal / quot)+ { return i.join("") }
 num = "0" {return "0"}
   / head:[1-9] i:(decimalDigit)* {return parseInt(head + i.join(""),10)}
@@ -157,7 +163,7 @@ charactar = UniLetter / decimalDigit
 EXTEND = a:"extend" !identifier {return a}
 USE = a:"use" !identifier {return a}
 
-whiteSpace = " " / "\r"
+whiteSpace = " " / "\r" / "\t"
 _  = __?
 __ = ws:whiteSpace+ {return ws.join("");}
 

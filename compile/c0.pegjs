@@ -74,7 +74,7 @@ return = RETURN __ e:expressionworthy? {return "return "+(e || "")}
 binaryExpr = l:leftExpr r:( _ o:binaryOperator _ e:(expressionworthy / primary){return [o,e]})* {
   return l + @us.flatten(r).join("")
 }
-binaryOperator = a:CompoundAssignmentOperators !"=" {return a;} / "<=" / ">=" / "<" / ">" / "==" {return "===";} / "!=" {return "!==";}
+binaryOperator = a:CompoundAssignmentOperators !"=" {return a;} / "<=" / ">=" / "<" / ">" / "==" / "!="
 CompoundAssignmentOperators = a:("&&" / "||" / [*/%] / e:"+" !"+" {return e;} / e:"-" !"-" {return e;}){
   return a;
 }
